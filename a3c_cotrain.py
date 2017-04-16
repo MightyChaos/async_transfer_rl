@@ -49,6 +49,7 @@ st = datetime.datetime.fromtimestamp(ts).strftime('%Y-%m-%d-%H-%M-%S')
 ENV1 = os.path.basename(ROM1).rstrip('.bin')
 ENV2 = os.path.basename(ROM2).rstrip('.bin')
 CHECKPOINT_DIR = os.path.join(CHECKPOINT_DIR, ENV1 + ENV2 + st)
+LOG_FILE = os.path.join(LOG_FILE, ENV1 + ENV2 + st)
 
 global_t = 0
 
