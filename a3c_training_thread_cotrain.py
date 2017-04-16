@@ -9,10 +9,10 @@ from game_state_cotrain import GameState1, GameState2
 from game_state_cotrain import ACTION_SIZE1, ACTION_SIZE2
 from game_ac_network_cotrain import GameACFFNetwork, GameACLSTMNetwork
 
-from constants import GAMMA
-from constants import LOCAL_T_MAX
-from constants import ENTROPY_BETA
-from constants import USE_LSTM
+from constants_cotrain import GAMMA
+from constants_cotrain import LOCAL_T_MAX
+from constants_cotrain import ENTROPY_BETA
+from constants_cotrain import USE_LSTM
 
 LOG_INTERVAL = 100
 PERFORMANCE_LOG_INTERVAL = 1000
@@ -49,16 +49,28 @@ class A3CTrainingThread(object):
       self.loss = self.local_network.total_loss2
 
     with tf.device(device):
-      var_refs = [v._ref() for v in self.local_network.get_vars()]
+      if thread_index % 2 == 0:
+        var_refs = [v._ref() for v in self.local_network.get_vars_1()]
+      elif thread_index % 2 == 1:
+        var_refs = [v._ref() for v in self.local_network.get_vars_2()]
+      else:
+        raise ValueError("thread index should be integer")
       self.gradients = tf.gradients(
         self.loss, var_refs,
         gate_gradients=False,
         aggregation_method=None,
         colocate_gradients_with_ops=False)
 
-    self.apply_gradients = grad_applier.apply_gradients(
-      global_network.get_vars(),
-      self.gradients )
+    grad_shape = self.gradients
+    print("grad_shape {0}".format(grad_shape))
+    if thread_index % 2 == 0:
+        self.apply_gradients = grad_applier.apply_gradients(
+          global_network.get_vars_1(),
+          self.gradients)
+    elif thread_index % 2 == 1:
+        self.apply_gradients = grad_applier.apply_gradients(
+          global_network.get_vars_2(),
+          self.gradients )
       
     self.sync = self.local_network.sync_from(global_network)
     

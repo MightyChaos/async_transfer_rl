@@ -4,8 +4,8 @@ import numpy as np
 import cv2
 from ale_python_interface import ALEInterface
 
-from constants import ROM1, ROM2
-from constants import ACTION_SIZE1, ACTION_SIZE2
+from constants_cotrain import ROM1, ROM2
+from constants_cotrain import ACTION_SIZE1, ACTION_SIZE2
 
 class GameState1(object):
   def __init__(self, rand_seed, display=False, no_op_max=7):

@@ -103,3 +103,18 @@ class RMSPropApplier(object):
             clipped_accum_grad = tf.clip_by_norm(accum_grad, self._clip_norm)
             update_ops.append(self._apply_dense(clipped_accum_grad, var))
         return tf.group(*update_ops, name=name)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
