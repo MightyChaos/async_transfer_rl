@@ -31,7 +31,7 @@ class A3CTrainingThread(object):
     self.max_global_time_step = max_global_time_step
 
     if USE_LSTM:
-      self.local_network = GameACLSTMNetwork(ACTION_SIZE1, thread_index, device)
+      self.local_network = GameACLSTMNetwork(ACTION_SIZE1, ACTION_SIZE2, thread_index, device)
     else:
       self.local_network = GameACFFNetwork(ACTION_SIZE1, ACTION_SIZE2, thread_index, device)
 
@@ -195,15 +195,28 @@ class A3CTrainingThread(object):
       batch_td.reverse()
       batch_R.reverse()
 
-      sess.run( self.apply_gradients,
-                feed_dict = {
-                  self.local_network.s: batch_si,
-                  self.local_network.a: batch_a,
-                  self.local_network.td: batch_td,
-                  self.local_network.r: batch_R,
-                  self.local_network.initial_lstm_state: start_lstm_state,
-                  self.local_network.step_size : [len(batch_a)],
-                  self.learning_rate_input: cur_learning_rate } )
+      if self.game_index == 1:
+          sess.run( self.apply_gradients,
+                    feed_dict = {
+                      self.local_network.s: batch_si,
+                      self.local_network.a1: batch_a,
+                      self.local_network.td1: batch_td,
+                      self.local_network.r1: batch_R,
+                      self.local_network.initial_lstm_state: start_lstm_state,
+                      self.local_network.step_size : [len(batch_a)],
+                      self.learning_rate_input: cur_learning_rate } )
+
+      if self.game_index == 2:
+          sess.run( self.apply_gradients,
+                    feed_dict = {
+                      self.local_network.s: batch_si,
+                      self.local_network.a2: batch_a,
+                      self.local_network.td2: batch_td,
+                      self.local_network.r2: batch_R,
+                      self.local_network.initial_lstm_state: start_lstm_state,
+                      self.local_network.step_size : [len(batch_a)],
+                      self.learning_rate_input: cur_learning_rate } )
+
     else:
       if self.game_index == 1:
           sess.run( self.apply_gradients,

@@ -209,10 +209,11 @@ class GameACFFNetwork(GameACNetwork):
 # Actor-Critic LSTM Network
 class GameACLSTMNetwork(GameACNetwork):
   def __init__(self,
-               action_size,
+               action_size1,
+               action_size2,
                thread_index, # -1 for global
                device="/cpu:0" ):
-    GameACNetwork.__init__(self, action_size, thread_index, device)
+    GameACNetwork.__init__(self, action_size1, action_size2, thread_index, device)
 
     scope_name = "net_" + str(self._thread_index)
     with tf.device(self._device), tf.variable_scope(scope_name) as scope:
@@ -225,10 +226,12 @@ class GameACLSTMNetwork(GameACNetwork):
       self.lstm = tf.contrib.rnn.BasicLSTMCell(256, state_is_tuple=True)
 
       # weight for policy output layer
-      self.W_fc2, self.b_fc2 = self._fc_variable([256, action_size])
+      self.W_fc2_1, self.b_fc2_1 = self._fc_variable([256, action_size1])
+      self.W_fc2_2, self.b_fc2_2 = self._fc_variable([256, action_size2])
 
       # weight for value output layer
-      self.W_fc3, self.b_fc3 = self._fc_variable([256, 1])
+      self.W_fc3_1, self.b_fc3_1 = self._fc_variable([256, 1])
+      self.W_fc3_2, self.b_fc3_2 = self._fc_variable([256, 1])
 
       # state (input)
       self.s = tf.placeholder("float", [None, 84, 84, 4])
@@ -268,11 +271,14 @@ class GameACLSTMNetwork(GameACNetwork):
       lstm_outputs = tf.reshape(lstm_outputs, [-1,256])
 
       # policy (output)
-      self.pi = tf.nn.softmax(tf.matmul(lstm_outputs, self.W_fc2) + self.b_fc2)
-      
+      self.pi1 = tf.nn.softmax(tf.matmul(lstm_outputs, self.W_fc2_1) + self.b_fc2_1)
+      self.pi2 = tf.nn.softmax(tf.matmul(lstm_outputs, self.W_fc2_2) + self.b_fc2_2)
+
       # value (output)
-      v_ = tf.matmul(lstm_outputs, self.W_fc3) + self.b_fc3
-      self.v = tf.reshape( v_, [-1] )
+      v_1_ = tf.matmul(lstm_outputs, self.W_fc3_1) + self.b_fc3_1
+      v_2_ = tf.matmul(lstm_outputs, self.W_fc3_2) + self.b_fc3_2
+      self.v1 = tf.reshape( v_1_, [-1] )
+      self.v2 = tf.reshape( v_2_, [-1] )
 
       scope.reuse_variables()
       self.W_lstm = tf.get_variable("basic_lstm_cell/weights")
@@ -284,39 +290,65 @@ class GameACLSTMNetwork(GameACNetwork):
     self.lstm_state_out = tf.contrib.rnn.LSTMStateTuple(np.zeros([1, 256]),
                                                         np.zeros([1, 256]))
 
-  def run_policy_and_value(self, sess, s_t):
+  def run_policy_and_value(self, sess, s_t, game_index):
     # This run_policy_and_value() is used when forward propagating.
     # so the step size is 1.
-    pi_out, v_out, self.lstm_state_out = sess.run( [self.pi, self.v, self.lstm_state],
+    if game_index == 1:
+        pi_out, v_out, self.lstm_state_out = sess.run( [self.pi1, self.v1, self.lstm_state],
                                                    feed_dict = {self.s : [s_t],
                                                                 self.initial_lstm_state0 : self.lstm_state_out[0],
                                                                 self.initial_lstm_state1 : self.lstm_state_out[1],
                                                                 self.step_size : [1]} )
+
+    elif game_index == 2:
+        pi_out, v_out, self.lstm_state_out = sess.run( [self.pi2, self.v2, self.lstm_state],
+                                                   feed_dict = {self.s : [s_t],
+                                                                self.initial_lstm_state0 : self.lstm_state_out[0],
+                                                                self.initial_lstm_state1 : self.lstm_state_out[1],
+                                                                self.step_size : [1]} )
+    else:
+        raise ValueError("game index out of range")
     # pi_out: (1,3), v_out: (1)
     return (pi_out[0], v_out[0])
 
-  def run_policy(self, sess, s_t):
+  def run_policy(self, sess, s_t, game_index):
     # This run_policy() is used for displaying the result with display tool.    
-    pi_out, self.lstm_state_out = sess.run( [self.pi, self.lstm_state],
+    if game_index == 1:
+        pi_out, self.lstm_state_out = sess.run( [self.pi1, self.lstm_state],
                                             feed_dict = {self.s : [s_t],
                                                          self.initial_lstm_state0 : self.lstm_state_out[0],
                                                          self.initial_lstm_state1 : self.lstm_state_out[1],
                                                          self.step_size : [1]} )
-                                            
+    elif game_index == 2:
+        pi_out, self.lstm_state_out = sess.run( [self.pi2, self.lstm_state],
+                                            feed_dict = {self.s : [s_t],
+                                                         self.initial_lstm_state0 : self.lstm_state_out[0],
+                                                         self.initial_lstm_state1 : self.lstm_state_out[1],
+                                                         self.step_size : [1]} )
+    else:
+        raise ValueError("game index out of range")
     return pi_out[0]
 
-  def run_value(self, sess, s_t):
+  def run_value(self, sess, s_t, game_index):
     # This run_value() is used for calculating V for bootstrapping at the 
     # end of LOCAL_T_MAX time step sequence.
     # When next sequcen starts, V will be calculated again with the same state using updated network weights,
     # so we don't update LSTM state here.
     prev_lstm_state_out = self.lstm_state_out
-    v_out, _ = sess.run( [self.v, self.lstm_state],
+    if game_index == 1:
+        v_out, _ = sess.run( [self.v1, self.lstm_state],
                          feed_dict = {self.s : [s_t],
                                       self.initial_lstm_state0 : self.lstm_state_out[0],
                                       self.initial_lstm_state1 : self.lstm_state_out[1],
                                       self.step_size : [1]} )
-    
+    elif game_index == 2:
+        v_out, _ = sess.run( [self.v2, self.lstm_state],
+                         feed_dict = {self.s : [s_t],
+                                      self.initial_lstm_state0 : self.lstm_state_out[0],
+                                      self.initial_lstm_state1 : self.lstm_state_out[1],
+                                      self.step_size : [1]} )
+    else:
+        raise ValueError("game index out of range")
     # roll back lstm state
     self.lstm_state_out = prev_lstm_state_out
     return v_out[0]
@@ -326,5 +358,27 @@ class GameACLSTMNetwork(GameACNetwork):
             self.W_conv2, self.b_conv2,
             self.W_fc1, self.b_fc1,
             self.W_lstm, self.b_lstm,
-            self.W_fc2, self.b_fc2,
-            self.W_fc3, self.b_fc3]
+            self.W_fc2_1, self.b_fc2_1,
+            self.W_fc2_2, self.b_fc2_2,
+            self.W_fc3_1, self.b_fc3_1,
+            self.W_fc3_2, self.b_fc3_2]
+
+  def get_vars_1(self):
+    return [self.W_conv1, self.b_conv1,
+            self.W_conv2, self.b_conv2,
+            self.W_fc1, self.b_fc1,
+            self.W_lstm, self.b_lstm,
+            self.W_fc2_1, self.b_fc2_1,
+            self.W_fc3_1, self.b_fc3_1]
+
+
+  def get_vars_2(self):
+    return [self.W_conv1, self.b_conv1,
+            self.W_conv2, self.b_conv2,
+            self.W_fc1, self.b_fc1,
+            self.W_lstm, self.b_lstm,
+            self.W_fc2_2, self.b_fc2_2,
+            self.W_fc3_2, self.b_fc3_2]
+
+
+

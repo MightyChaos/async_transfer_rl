@@ -56,7 +56,7 @@ global_t = 0
 stop_requested = False
 
 if USE_LSTM:
-  global_network = GameACLSTMNetwork(ACTION_SIZE1, -1, device)
+  global_network = GameACLSTMNetwork(ACTION_SIZE1, ACTION_SIZE2, -1, device)
 else:
   #global_network needs to incorporate two games
   global_network = GameACFFNetwork(ACTION_SIZE1, ACTION_SIZE2, -1, device)
