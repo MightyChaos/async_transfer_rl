@@ -223,7 +223,8 @@ class GameACLSTMNetwork(GameACNetwork):
       self.W_fc1, self.b_fc1 = self._fc_variable([2592, 256])
 
       # lstm
-      self.lstm = tf.contrib.rnn.BasicLSTMCell(256, state_is_tuple=True)
+      self.lstm_1 = tf.contrib.rnn.BasicLSTMCell(256, state_is_tuple=True)
+      self.lstm_2 = tf.contrib.rnn.BasicLSTMCell(256, state_is_tuple=True)
 
       # weight for policy output layer
       self.W_fc2_1, self.b_fc2_1 = self._fc_variable([256, action_size1])
@@ -247,42 +248,70 @@ class GameACLSTMNetwork(GameACNetwork):
       # h_fc_reshaped = (1,5,256)
 
       # place holder for LSTM unrolling time step size.
-      self.step_size = tf.placeholder(tf.float32, [1])
+      #TODO: do we need two placeholders for lstm states or stepsize?
+      self.step_size_1 = tf.placeholder(tf.float32, [1])
+      self.step_size_2 = tf.placeholder(tf.float32, [1])
 
-      self.initial_lstm_state0 = tf.placeholder(tf.float32, [1, 256])
-      self.initial_lstm_state1 = tf.placeholder(tf.float32, [1, 256])
-      self.initial_lstm_state = tf.contrib.rnn.LSTMStateTuple(self.initial_lstm_state0,
-                                                              self.initial_lstm_state1)
-      
+      self.initial_lstm_state0_1 = tf.placeholder(tf.float32, [1, 256])
+      self.initial_lstm_state1_1 = tf.placeholder(tf.float32, [1, 256])
+      self.initial_lstm_state_1 = tf.contrib.rnn.LSTMStateTuple(self.initial_lstm_state0_1,
+                                                              self.initial_lstm_state1_1)
+
+      self.initial_lstm_state0_2 = tf.placeholder(tf.float32, [1, 256])
+      self.initial_lstm_state1_2 = tf.placeholder(tf.float32, [1, 256])
+      self.initial_lstm_state_2 = tf.contrib.rnn.LSTMStateTuple(self.initial_lstm_state0_2,
+                                                              self.initial_lstm_state1_2)
+
+
       # Unrolling LSTM up to LOCAL_T_MAX time steps. (= 5time steps.)
       # When episode terminates unrolling time steps becomes less than LOCAL_TIME_STEP.
       # Unrolling step size is applied via self.step_size placeholder.
       # When forward propagating, step_size is 1.
       # (time_major = False, so output shape is [batch_size, max_time, cell.output_size])
-      lstm_outputs, self.lstm_state = tf.nn.dynamic_rnn(self.lstm,
+    scope_name_lstm1 = "net_" + str(self._thread_index) + 'lstm_1'
+    with tf.device(self._device), tf.variable_scope(scope_name_lstm1) as scope:
+      lstm_outputs_1, self.lstm_state_1 = tf.nn.dynamic_rnn(self.lstm_1,
                                                         h_fc1_reshaped,
-                                                        initial_state = self.initial_lstm_state,
-                                                        sequence_length = self.step_size,
+                                                        initial_state = self.initial_lstm_state_1,
+                                                        sequence_length = self.step_size_1,
                                                         time_major = False,
                                                         scope = scope)
+      scope.reuse_variables()
+      self.W_lstm_1 = tf.get_variable("basic_lstm_cell/weights")
+      self.b_lstm_1 = tf.get_variable("basic_lstm_cell/biases")
+
+
+    scope_name_lstm2 = "net_" + str(self._thread_index) + 'lstm_2'
+    with tf.device(self._device), tf.variable_scope(scope_name_lstm2) as scope:
+      lstm_outputs_2, self.lstm_state_2 = tf.nn.dynamic_rnn(self.lstm_2,
+                                                        h_fc1_reshaped,
+                                                        initial_state = self.initial_lstm_state_2,
+                                                        sequence_length = self.step_size_2,
+                                                        time_major = False,
+                                                        scope = scope)
+      scope.reuse_variables()
+      self.W_lstm_2 = tf.get_variable("basic_lstm_cell/weights")
+      self.b_lstm_2 = tf.get_variable("basic_lstm_cell/biases")
 
       # lstm_outputs: (1,5,256) for back prop, (1,1,256) for forward prop.
-      
-      lstm_outputs = tf.reshape(lstm_outputs, [-1,256])
+    scope_name = "net_" + str(self._thread_index)
+    with tf.device(self._device), tf.variable_scope(scope_name) as scope:
+      lstm_outputs_1 = tf.reshape(lstm_outputs_1, [-1,256])
+      lstm_outputs_2 = tf.reshape(lstm_outputs_2, [-1,256])
 
       # policy (output)
-      self.pi1 = tf.nn.softmax(tf.matmul(lstm_outputs, self.W_fc2_1) + self.b_fc2_1)
-      self.pi2 = tf.nn.softmax(tf.matmul(lstm_outputs, self.W_fc2_2) + self.b_fc2_2)
+      self.pi1 = tf.nn.softmax(tf.matmul(lstm_outputs_1, self.W_fc2_1) + self.b_fc2_1)
+      self.pi2 = tf.nn.softmax(tf.matmul(lstm_outputs_2, self.W_fc2_2) + self.b_fc2_2)
 
       # value (output)
-      v_1_ = tf.matmul(lstm_outputs, self.W_fc3_1) + self.b_fc3_1
-      v_2_ = tf.matmul(lstm_outputs, self.W_fc3_2) + self.b_fc3_2
+      v_1_ = tf.matmul(lstm_outputs_1, self.W_fc3_1) + self.b_fc3_1
+      v_2_ = tf.matmul(lstm_outputs_2, self.W_fc3_2) + self.b_fc3_2
       self.v1 = tf.reshape( v_1_, [-1] )
       self.v2 = tf.reshape( v_2_, [-1] )
 
-      scope.reuse_variables()
-      self.W_lstm = tf.get_variable("basic_lstm_cell/weights")
-      self.b_lstm = tf.get_variable("basic_lstm_cell/biases")
+      #scope.reuse_variables()
+      #self.W_lstm = tf.get_variable("basic_lstm_cell/weights")
+      #self.b_lstm = tf.get_variable("basic_lstm_cell/biases")
 
       self.reset_state()
       
@@ -294,18 +323,18 @@ class GameACLSTMNetwork(GameACNetwork):
     # This run_policy_and_value() is used when forward propagating.
     # so the step size is 1.
     if game_index == 1:
-        pi_out, v_out, self.lstm_state_out = sess.run( [self.pi1, self.v1, self.lstm_state],
+        pi_out, v_out, self.lstm_state_out = sess.run( [self.pi1, self.v1, self.lstm_state_1],
                                                    feed_dict = {self.s : [s_t],
-                                                                self.initial_lstm_state0 : self.lstm_state_out[0],
-                                                                self.initial_lstm_state1 : self.lstm_state_out[1],
-                                                                self.step_size : [1]} )
+                                                                self.initial_lstm_state0_1 : self.lstm_state_out[0],
+                                                                self.initial_lstm_state1_1 : self.lstm_state_out[1],
+                                                                self.step_size_1 : [1]} )
 
     elif game_index == 2:
-        pi_out, v_out, self.lstm_state_out = sess.run( [self.pi2, self.v2, self.lstm_state],
+        pi_out, v_out, self.lstm_state_out = sess.run( [self.pi2, self.v2, self.lstm_state_2],
                                                    feed_dict = {self.s : [s_t],
-                                                                self.initial_lstm_state0 : self.lstm_state_out[0],
-                                                                self.initial_lstm_state1 : self.lstm_state_out[1],
-                                                                self.step_size : [1]} )
+                                                                self.initial_lstm_state0_2 : self.lstm_state_out[0],
+                                                                self.initial_lstm_state1_2 : self.lstm_state_out[1],
+                                                                self.step_size_2 : [1]} )
     else:
         raise ValueError("game index out of range")
     # pi_out: (1,3), v_out: (1)
@@ -314,17 +343,17 @@ class GameACLSTMNetwork(GameACNetwork):
   def run_policy(self, sess, s_t, game_index):
     # This run_policy() is used for displaying the result with display tool.    
     if game_index == 1:
-        pi_out, self.lstm_state_out = sess.run( [self.pi1, self.lstm_state],
+        pi_out, self.lstm_state_out = sess.run( [self.pi1, self.lstm_state_1],
                                             feed_dict = {self.s : [s_t],
-                                                         self.initial_lstm_state0 : self.lstm_state_out[0],
-                                                         self.initial_lstm_state1 : self.lstm_state_out[1],
-                                                         self.step_size : [1]} )
+                                                         self.initial_lstm_state0_1 : self.lstm_state_out[0],
+                                                         self.initial_lstm_state1_1 : self.lstm_state_out[1],
+                                                         self.step_size_1 : [1]} )
     elif game_index == 2:
-        pi_out, self.lstm_state_out = sess.run( [self.pi2, self.lstm_state],
+        pi_out, self.lstm_state_out = sess.run( [self.pi2, self.lstm_state_2],
                                             feed_dict = {self.s : [s_t],
-                                                         self.initial_lstm_state0 : self.lstm_state_out[0],
-                                                         self.initial_lstm_state1 : self.lstm_state_out[1],
-                                                         self.step_size : [1]} )
+                                                         self.initial_lstm_state0_2 : self.lstm_state_out[0],
+                                                         self.initial_lstm_state1_2 : self.lstm_state_out[1],
+                                                         self.step_size_2 : [1]} )
     else:
         raise ValueError("game index out of range")
     return pi_out[0]
@@ -336,17 +365,18 @@ class GameACLSTMNetwork(GameACNetwork):
     # so we don't update LSTM state here.
     prev_lstm_state_out = self.lstm_state_out
     if game_index == 1:
-        v_out, _ = sess.run( [self.v1, self.lstm_state],
+        v_out, _ = sess.run( [self.v1, self.lstm_state_1],
                          feed_dict = {self.s : [s_t],
-                                      self.initial_lstm_state0 : self.lstm_state_out[0],
-                                      self.initial_lstm_state1 : self.lstm_state_out[1],
-                                      self.step_size : [1]} )
+                                      self.initial_lstm_state0_1 : self.lstm_state_out[0],
+                                      self.initial_lstm_state1_1 : self.lstm_state_out[1],
+                                      self.step_size_1 : [1]} )
     elif game_index == 2:
-        v_out, _ = sess.run( [self.v2, self.lstm_state],
+        v_out, _ = sess.run( [self.v2, self.lstm_state_2],
                          feed_dict = {self.s : [s_t],
-                                      self.initial_lstm_state0 : self.lstm_state_out[0],
-                                      self.initial_lstm_state1 : self.lstm_state_out[1],
-                                      self.step_size : [1]} )
+                                      self.initial_lstm_state0_2 : self.lstm_state_out[0],
+                                      self.initial_lstm_state1_2 : self.lstm_state_out[1],
+                                      self.step_size_2 : [1]} )
+
     else:
         raise ValueError("game index out of range")
     # roll back lstm state
@@ -357,7 +387,8 @@ class GameACLSTMNetwork(GameACNetwork):
     return [self.W_conv1, self.b_conv1,
             self.W_conv2, self.b_conv2,
             self.W_fc1, self.b_fc1,
-            self.W_lstm, self.b_lstm,
+            self.W_lstm_1, self.b_lstm_1,
+            self.W_lstm_2, self.b_lstm_2,
             self.W_fc2_1, self.b_fc2_1,
             self.W_fc2_2, self.b_fc2_2,
             self.W_fc3_1, self.b_fc3_1,
@@ -367,7 +398,7 @@ class GameACLSTMNetwork(GameACNetwork):
     return [self.W_conv1, self.b_conv1,
             self.W_conv2, self.b_conv2,
             self.W_fc1, self.b_fc1,
-            self.W_lstm, self.b_lstm,
+            self.W_lstm_1, self.b_lstm_1,
             self.W_fc2_1, self.b_fc2_1,
             self.W_fc3_1, self.b_fc3_1]
 
@@ -376,7 +407,7 @@ class GameACLSTMNetwork(GameACNetwork):
     return [self.W_conv1, self.b_conv1,
             self.W_conv2, self.b_conv2,
             self.W_fc1, self.b_fc1,
-            self.W_lstm, self.b_lstm,
+            self.W_lstm_2, self.b_lstm_2,
             self.W_fc2_2, self.b_fc2_2,
             self.W_fc3_2, self.b_fc3_2]
 

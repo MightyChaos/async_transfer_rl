@@ -202,8 +202,8 @@ class A3CTrainingThread(object):
                       self.local_network.a1: batch_a,
                       self.local_network.td1: batch_td,
                       self.local_network.r1: batch_R,
-                      self.local_network.initial_lstm_state: start_lstm_state,
-                      self.local_network.step_size : [len(batch_a)],
+                      self.local_network.initial_lstm_state_1: start_lstm_state,
+                      self.local_network.step_size_1 : [len(batch_a)],
                       self.learning_rate_input: cur_learning_rate } )
 
       if self.game_index == 2:
@@ -213,8 +213,8 @@ class A3CTrainingThread(object):
                       self.local_network.a2: batch_a,
                       self.local_network.td2: batch_td,
                       self.local_network.r2: batch_R,
-                      self.local_network.initial_lstm_state: start_lstm_state,
-                      self.local_network.step_size : [len(batch_a)],
+                      self.local_network.initial_lstm_state_2: start_lstm_state,
+                      self.local_network.step_size_2 : [len(batch_a)],
                       self.learning_rate_input: cur_learning_rate } )
 
     else:
