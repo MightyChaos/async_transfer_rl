@@ -10,10 +10,10 @@ INITIAL_ALPHA_HIGH = 1e-2   # log_uniform high limit for learning rate
 
 PARALLEL_SIZE = 2 # parallel thread size
 #ROM = "supported/pong.bin"     # action size = 3
-ROM1 = "supported/breakout.bin"     # action size = 3
-ROM2 = "supported/pong.bin"     # action size = 3
-ACTION_SIZE1 = 4 # action size
-ACTION_SIZE2 = 3 # action size
+ROM1 = "supported/pong.bin"     # action size = 3
+ROM2 = "supported/space_invaders.bin"     # action size = 3
+ACTION_SIZE1 = 3 # action size
+ACTION_SIZE2 = 6 # action size
 
 INITIAL_ALPHA_LOG_RATE = 0.4226 # log_uniform interpolate rate for learning rate (around 7 * 10^-4)
 GAMMA = 0.99 # discount factor for rewards

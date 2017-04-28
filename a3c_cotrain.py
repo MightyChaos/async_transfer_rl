@@ -29,6 +29,8 @@ from constants_cotrain import USE_GPU
 from constants_cotrain import USE_LSTM
 from constants_cotrain import ROM1, ROM2
 
+os.environ['CUDA_VISIBLE_DEVICE'] = '1'
+
 
 def log_uniform(lo, hi, rate):
   log_lo = math.log(lo)
@@ -46,6 +48,8 @@ initial_learning_rate = log_uniform(INITIAL_ALPHA_LOW,
 
 ts = time.time()
 st = datetime.datetime.fromtimestamp(ts).strftime('%Y-%m-%d-%H-%M-%S')
+print("TIME STAMP: {0}".format(st))
+
 ENV1 = os.path.basename(ROM1).rstrip('.bin')
 ENV2 = os.path.basename(ROM2).rstrip('.bin')
 CHECKPOINT_DIR = os.path.join(CHECKPOINT_DIR, ENV1 + ENV2 + st)
