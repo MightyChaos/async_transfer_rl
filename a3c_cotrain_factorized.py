@@ -11,7 +11,7 @@ import os
 import time
 
 from game_ac_network_cotrain_factorized import GameACFFNetwork, GameACLSTMNetwork
-from a3c_training_thread_cotrain import A3CTrainingThread
+from a3c_training_thread_cotrain_factorized import A3CTrainingThread
 from rmsprop_applier import RMSPropApplier
 
 from constants_cotrain_factorized import ACTION_SIZE1, ACTION_SIZE2
