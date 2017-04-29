@@ -209,7 +209,7 @@ class GameACFFNetwork(GameACNetwork):
     def get_vars_1(self):
         return [self.W_conv1, self.b_conv1,
                 self.W_conv2, self.b_conv2,
-                self.W_fc1_A, self.W_fc1_A,
+                self.W_fc1_A, self.W_fc1_B,
                 self.z_1, self.b_fc1_1,
                 self.W_fc2_1, self.b_fc2_1,
                 self.W_fc3_1, self.b_fc3_1]
@@ -217,7 +217,7 @@ class GameACFFNetwork(GameACNetwork):
     def get_vars_2(self):
         return [self.W_conv1, self.b_conv1,
                 self.W_conv2, self.b_conv2,
-                self.W_fc1_A, self.W_fc1_A,
+                self.W_fc1_A, self.W_fc1_B,
                 self.z_2, self.b_fc1_2,
                 self.W_fc2_2, self.b_fc2_2,
                 self.W_fc3_2, self.b_fc3_2]
