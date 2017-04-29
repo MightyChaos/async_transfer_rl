@@ -96,7 +96,7 @@ class GameACNetwork(object):
         d = 1.0 / np.sqrt(input_channels)
         bias_shape = [output_channels]
         weight_A = tf.Variable(tf.random_uniform(weight_shape, minval=-d, maxval=d))
-        weight_B = tf.Variable(tf.random_uniform([input_channels, input_channels], minval=-d, maxval=d))
+        weight_B = tf.Variable(tf.random_uniform([output_channels, output_channels], minval=-d, maxval=d))
         z_1 = tf.Variable(tf.random_uniform(bias_shape, minval=-d, maxval=d))
         z_2 = tf.Variable(tf.random_uniform(bias_shape, minval=-d, maxval=d))
         bias_1 = tf.Variable(tf.random_uniform(bias_shape, minval=-d, maxval=d))
