@@ -158,7 +158,7 @@ class GameACFFNetwork(GameACNetwork):
             h_A = tf.matmul(h_conv2_flat, self.W_fc1_A)
             h_Az_1 = tf.multiply(h_A, self.z_1)
             h_Az_2 = tf.multiply(h_A, self.z_2)
-
+            print(h_Az_1.get_shape())
             h_fc1_1 = tf.nn.relu(tf.matmul(h_Az_1, self.W_fc1_B) + self.b_fc1_1)
             h_fc1_2 = tf.nn.relu(tf.matmul(h_Az_2, self.W_fc1_B) + self.b_fc1_2)
 
