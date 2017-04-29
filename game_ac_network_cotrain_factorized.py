@@ -152,11 +152,18 @@ class GameACFFNetwork(GameACNetwork):
             h_conv2_flat = tf.reshape(h_conv2, [-1, 2592])
             # two streams of fc layer
 
-            W_fc1_1 = tf.matmul(tf.multiply(self.W_fc1_A, self.z_1), self.W_fc1_B)
-            W_fc1_2 = tf.matmul(tf.multiply(self.W_fc1_A, self.z_2), self.W_fc1_B)
+            # W_fc1_1 = tf.matmul(tf.multiply(self.W_fc1_A, self.z_1), self.W_fc1_B)
+            # W_fc1_2 = tf.matmul(tf.multiply(self.W_fc1_A, self.z_2), self.W_fc1_B)
 
-            h_fc1_1 = tf.nn.relu(tf.matmul(h_conv2_flat, W_fc1_1) + self.b_fc1_1)
-            h_fc1_2 = tf.nn.relu(tf.matmul(h_conv2_flat, W_fc1_2) + self.b_fc1_2)
+            h_A = tf.matmul(h_conv2_flat, self.W_fc1_A)
+            h_Az_1 = tf.multiply(h_A, self.z_1)
+            h_Az_2 = tf.multiply(h_A, self.z_2)
+
+            h_fc1_1 = tf.nn.relu(tf.matmul(h_Az_1, self.W_fc1_B) + self.b_fc1_1)
+            h_fc1_2 = tf.nn.relu(tf.matmul(h_Az_2, self.W_fc1_B) + self.b_fc1_2)
+
+            # h_fc1_1 = tf.nn.relu(tf.matmul(h_conv2_flat, W_fc1_1) + self.b_fc1_1)
+            # h_fc1_2 = tf.nn.relu(tf.matmul(h_conv2_flat, W_fc1_2) + self.b_fc1_2)
 
 
             # policy (output)
@@ -210,7 +217,7 @@ class GameACFFNetwork(GameACNetwork):
         return [self.W_conv1, self.b_conv1,
                 self.W_conv2, self.b_conv2,
                 self.W_fc1_A, self.W_fc1_B,
-                self.z_1, self.b_fc1_1,
+                self.z_1,     self.b_fc1_1,
                 self.W_fc2_1, self.b_fc2_1,
                 self.W_fc3_1, self.b_fc3_1]
 
@@ -218,7 +225,7 @@ class GameACFFNetwork(GameACNetwork):
         return [self.W_conv1, self.b_conv1,
                 self.W_conv2, self.b_conv2,
                 self.W_fc1_A, self.W_fc1_B,
-                self.z_2, self.b_fc1_2,
+                self.z_2,     self.b_fc1_2,
                 self.W_fc2_2, self.b_fc2_2,
                 self.W_fc3_2, self.b_fc3_2]
 
