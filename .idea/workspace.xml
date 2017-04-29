@@ -118,8 +118,8 @@
       <file leaf-file-name="game_ac_network_cotrain_factorized.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/game_ac_network_cotrain_factorized.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="435">
-              <caret line="153" column="0" lean-forward="true" selection-start-line="153" selection-start-column="0" selection-end-line="153" selection-end-column="0" />
+            <state relative-caret-position="240">
+              <caret line="142" column="68" lean-forward="true" selection-start-line="142" selection-start-column="68" selection-end-line="142" selection-end-column="68" />
               <folding>
                 <element signature="e#24#47#0" expanded="true" />
               </folding>
@@ -777,8 +777,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/game_ac_network_cotrain_factorized.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="435">
-          <caret line="153" column="0" lean-forward="true" selection-start-line="153" selection-start-column="0" selection-end-line="153" selection-end-column="0" />
+        <state relative-caret-position="240">
+          <caret line="142" column="68" lean-forward="true" selection-start-line="142" selection-start-column="68" selection-end-line="142" selection-end-column="68" />
           <folding>
             <element signature="e#24#47#0" expanded="true" />
           </folding>
