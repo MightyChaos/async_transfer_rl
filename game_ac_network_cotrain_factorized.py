@@ -152,8 +152,8 @@ class GameACFFNetwork(GameACNetwork):
             h_conv2_flat = tf.reshape(h_conv2, [-1, 2592])
             # two streams of fc layer
 
-            W_fc1_1 = tf.matmul(tf.matmul(self.W_fc1_A, self.z_1), self.w_fc1_B)
-            W_fc1_2 = tf.matmul(tf.matmul(self.W_fc1_A, self.z_2), self.w_fc1_B)
+            W_fc1_1 = tf.matmul(tf.matmul(self.W_fc1_A, self.z_1), self.W_fc1_B)
+            W_fc1_2 = tf.matmul(tf.matmul(self.W_fc1_A, self.z_2), self.W_fc1_B)
 
             h_fc1_1 = tf.nn.relu(tf.matmul(h_conv2_flat, self.W_fc1_1) + self.b_fc1_1)
             h_fc1_2 = tf.nn.relu(tf.matmul(h_conv2_flat, self.W_fc1_2) + self.b_fc1_2)
