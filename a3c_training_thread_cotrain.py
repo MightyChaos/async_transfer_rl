@@ -62,6 +62,7 @@ class A3CTrainingThread(object):
         colocate_gradients_with_ops=False)
 
     if thread_index % 2 == 0:
+        print(global_network.get_vars_1())
         self.apply_gradients = grad_applier.apply_gradients(
           global_network.get_vars_1(),
           self.gradients)
